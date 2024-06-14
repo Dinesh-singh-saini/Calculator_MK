@@ -1,7 +1,9 @@
 package com.example.math_catcutate
 
+import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -18,12 +20,17 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.math_catcutate.databinding.ActivityMainBinding
 import net.objecthunter.exp4j.ExpressionBuilder
 import java.lang.ArithmeticException
+import java.math.BigDecimal
+import java.math.MathContext
+
+data class HistoryEntry(val expression: String, val result: String)
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var lastNum = false
     private var lastDot = false
     private var stmtError = false
+    private val historyList = mutableListOf<HistoryEntry>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +45,7 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -49,41 +57,60 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_history -> {
-                // Handle History action
-                Toast.makeText(this, "History selected", Toast.LENGTH_SHORT).show()
+                toggleHistoryView()
+                true
+            }
+            R.id.action_clearHistory ->{
+                historyList.clear()
+                updateHistoryView()
+                val message = "History cleared successfully."
+                Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+
                 true
             }
             R.id.action_privacy_policy -> {
-                // Handle Privacy Policy action
-                Toast.makeText(this, "Privacy Policy selected", Toast.LENGTH_SHORT).show()
+                openWebPage("https://d-s.netlify.app/privacy_policy")
                 true
             }
             R.id.action_about -> {
-                // Handle About action
-                Toast.makeText(this, "About selected", Toast.LENGTH_SHORT).show()
+                openWebPage("https://d-s.netlify.app/")
                 true
             }
             R.id.action_version -> {
-                val packageManager: PackageManager = this.packageManager
-                val packageInfo: PackageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    packageManager.getPackageInfo(this.packageName, PackageManager.PackageInfoFlags.of(0))
-                } else {
-                    packageManager.getPackageInfo(this.packageName, 0)
-                }
-                val versionName: String = packageInfo.versionName
-                val versionCode: Long = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    packageInfo.longVersionCode
-                } else {
-                    @Suppress("DEPRECATION")
-                    packageInfo.versionCode.toLong()
-                }
-                Toast.makeText(this, "Version: $versionName ($versionCode)", Toast.LENGTH_LONG).show()
+                showAppVersion()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
+    private fun openWebPage(url: String) {
+        val webpage: Uri = Uri.parse(url)
+        val intent = Intent(Intent.ACTION_VIEW, webpage)
+        startActivity(intent)
+    }
+
+    private fun showAppVersion() {
+        try {
+            val packageManager: PackageManager = this.packageManager
+            val packageInfo: PackageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageManager.getPackageInfo(this.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                packageManager.getPackageInfo(this.packageName, 0)
+            }
+            val versionName: String = packageInfo.versionName
+            val versionCode: Long = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+            Toast.makeText(this, "Version: $versionName ($versionCode)", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to get version info", e)
+            Toast.makeText(this, "Failed to get version info", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun onClickClear(view: View) {
         binding.operationTv.text = ""
@@ -105,7 +132,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 binding.resultTv.text = ""
                 binding.resultTv.visibility = View.GONE
-                Log.e("last char error", e.toString())
+                Log.e("MainActivity", "last char error", e)
             }
         }
     }
@@ -147,10 +174,10 @@ class MainActivity : AppCompatActivity() {
         onEquals()
     }
 
-
     fun onClickEquals(view: View) {
         onEquals()
         binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 50f)
+        saveToHistory(binding.operationTv.text.toString(), binding.resultTv.text.toString().substring(2))  // Save to history
     }
 
     private fun onEquals() {
@@ -172,24 +199,44 @@ class MainActivity : AppCompatActivity() {
 
             try {
                 val expression = ExpressionBuilder(expressionText).build()
-                val result = expression.evaluate()
-                val txtresult = if (result % 1 == 0.0) {
-                    result.toInt().toString()
+                val result = BigDecimal(expression.evaluate(), MathContext.DECIMAL128)
+                val txtresult = if (result.stripTrailingZeros().scale() <= 0) {
+                    result.toPlainString()
                 } else {
-                    result.toString()
+                    result.setScale(10, BigDecimal.ROUND_HALF_UP).toPlainString()
                 }
 
                 binding.resultTv.visibility = View.VISIBLE
                 binding.resultTv.text = "= $txtresult"
                 stmtError = false
                 lastNum = true
+
             } catch (ex: ArithmeticException) {
-                Log.e("evaluate error", ex.toString())
+                Log.e("MainActivity", "evaluate error", ex)
                 showError("Error")
             } catch (ex: Exception) {
-                Log.e("evaluate error", ex.toString())
+                Log.e("MainActivity", "evaluate error", ex)
                 showError("Error")
             }
+        }
+    }
+
+    private fun saveToHistory(inputText: String, txtResult: String) {
+        val entry = HistoryEntry(inputText, txtResult)
+        historyList.add(0, entry)
+        updateHistoryView()
+    }
+
+    private fun updateHistoryView() {
+        val historyText = historyList.joinToString(separator = "\n") { "${it.expression} = ${it.result}" }
+        binding.historyTv.text = historyText
+    }
+
+    private fun toggleHistoryView() {
+        if (binding.historyScrollView.visibility == View.VISIBLE) {
+            binding.historyScrollView.visibility = View.GONE
+        } else {
+            binding.historyScrollView.visibility = View.VISIBLE
         }
     }
 

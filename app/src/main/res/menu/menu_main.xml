@@ -7,13 +7,18 @@
         android:orderInCategory="100"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_clearHistory"
+        android:title="Clear History"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_privacy_policy"
         android:title="Privacy Policy"
         android:orderInCategory="100"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_about"
-        android:title="About"
+        android:title="About Develeper"
         android:orderInCategory="100"
         app:showAsAction="never" />
     <item
