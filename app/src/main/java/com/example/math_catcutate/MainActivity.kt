@@ -23,6 +23,8 @@ import java.lang.ArithmeticException
 import java.math.BigDecimal
 import java.math.MathContext
 
+
+
 data class HistoryEntry(val expression: String, val result: String)
 
 class MainActivity : AppCompatActivity() {
@@ -45,8 +47,11 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
 
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val inflater: MenuInflater = menuInflater
