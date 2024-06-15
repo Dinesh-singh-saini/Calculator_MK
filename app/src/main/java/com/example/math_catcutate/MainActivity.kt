@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity() {
     fun onClickEquals(view: View) {
         onEquals()
         binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 50f)
-        saveToHistory(binding.operationTv.text.toString(), binding.resultTv.text.toString().substring(2))  // Save to history
+        saveToHistory(binding.operationTv.text.toString(), binding.resultTv.text.toString().substring(2))
     }
 
     private fun onEquals() {
