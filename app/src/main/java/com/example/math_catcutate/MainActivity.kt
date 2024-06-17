@@ -3,15 +3,18 @@ package com.example.math_catcutate
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.graphics.Color.WHITE
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
+import android.transition.Fade
+import android.transition.TransitionManager
 import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,11 +22,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.math_catcutate.databinding.ActivityMainBinding
 import net.objecthunter.exp4j.ExpressionBuilder
-import java.lang.ArithmeticException
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.math.MathContext
-
-
 
 data class HistoryEntry(val expression: String, val result: String)
 
@@ -47,11 +48,8 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
-
+        window.statusBarColor = WHITE
     }
-
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val inflater: MenuInflater = menuInflater
@@ -65,12 +63,8 @@ class MainActivity : AppCompatActivity() {
                 toggleHistoryView()
                 true
             }
-            R.id.action_clearHistory ->{
-                historyList.clear()
-                updateHistoryView()
-                val message = "History cleared successfully."
-                Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
-
+            R.id.action_clearHistory -> {
+                clearHistory()
                 true
             }
             R.id.action_privacy_policy -> {
@@ -98,18 +92,11 @@ class MainActivity : AppCompatActivity() {
     private fun showAppVersion() {
         try {
             val packageManager: PackageManager = this.packageManager
-            val packageInfo: PackageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val packageInfo: PackageInfo =
                 packageManager.getPackageInfo(this.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-            } else {
-                packageManager.getPackageInfo(this.packageName, 0)
-            }
             val versionName: String = packageInfo.versionName
-            val versionCode: Long = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val versionCode: Long =
                 packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
             Toast.makeText(this, "Version: $versionName ($versionCode)", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to get version info", e)
@@ -118,12 +105,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onClickClear(view: View) {
-        binding.operationTv.text = ""
-        binding.resultTv.text = ""
-        binding.resultTv.visibility = View.GONE
-        lastNum = false
-        lastDot = false
-        stmtError = false
+        binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40f)
+        clear()
     }
 
     fun onClickBackspace(view: View) {
@@ -140,6 +123,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity", "last char error", e)
             }
         }
+        dynamicAdjustTextSize()
     }
 
     fun onClickOperator(view: View) {
@@ -155,6 +139,7 @@ class MainActivity : AppCompatActivity() {
             lastDot = false
             lastNum = false
         }
+        dynamicAdjustTextSize()
     }
 
     fun onClickNum(view: View) {
@@ -165,25 +150,58 @@ class MainActivity : AppCompatActivity() {
             binding.operationTv.append((view as Button).text)
         }
         lastNum = true
+        dynamicAdjustTextSize()
         onEquals()
     }
 
     fun onClick00(view: View) {
         if (stmtError) {
-            binding.operationTv.text = "00"
+            binding.operationTv.text = R.id.button00.toString()
             stmtError = false
         } else {
             binding.operationTv.append("00")
         }
         lastNum = true
+        dynamicAdjustTextSize()
         onEquals()
+    }
+    fun onClickFact(view: View) {
+        val inputText = binding.operationTv.text.toString()
+        val number = inputText.toBigIntegerOrNull()
+        binding.operationTv.append("!")
+
+        if (inputText.isEmpty()) {
+            showError("Error: Empty Expression")
+            return
+        }
+
+        if (number != null && number >= BigInteger.ZERO) {
+            val result = fact(number)
+            binding.resultTv.text = result.toString()
+        } else {
+            showError("Enter a non-negative integer")
+        }
+        dynamicAdjustTextSize()
+        stmtError = false
+    }
+
+    private fun fact(n: BigInteger?): BigInteger {
+        if (n == null || n == BigInteger.ZERO) {
+            return BigInteger.ONE
+        }
+        return n * fact(n - BigInteger.ONE)
     }
 
     fun onClickEquals(view: View) {
-        onEquals()
-        binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 50f)
-        saveToHistory(binding.operationTv.text.toString(), binding.resultTv.text.toString().substring(2))
+        val resultText = binding.resultTv.text.toString()
+        dynamicAdjustTextSize()
+        if (resultText.length > 2 && !stmtError && binding.resultTv.text.toString() != R.string.loveMsg.toString()) {
+            saveToHistory(binding.operationTv.text.toString(), resultText)
+        }
+        binding.operationTv.text = binding.resultTv.text
+        binding.resultTv.visibility = View.GONE
     }
+
 
     private fun onEquals() {
         if (lastNum && !stmtError) {
@@ -191,11 +209,16 @@ class MainActivity : AppCompatActivity() {
 
             if (inputText == "143") {
                 binding.resultTv.visibility = View.VISIBLE
-                binding.resultTv.text = "I Love You Cutie ❤️🤗"
+                binding.resultTv.setText(R.string.loveMsg)
                 return
             }
 
-            val expressionText = inputText.replace("×", "*").replace("÷", "/")
+            if (inputText.isEmpty()) {
+                showError("Error: Empty Expression")
+                return
+            }
+
+            val expressionText = preprocessExpression(inputText)
 
             if (expressionText.isEmpty()) {
                 showError("Error: Empty Expression")
@@ -205,25 +228,45 @@ class MainActivity : AppCompatActivity() {
             try {
                 val expression = ExpressionBuilder(expressionText).build()
                 val result = BigDecimal(expression.evaluate(), MathContext.DECIMAL128)
-                val txtresult = if (result.stripTrailingZeros().scale() <= 0) {
+                val textResult = if (result.stripTrailingZeros().scale() <= 0) {
                     result.toPlainString()
                 } else {
                     result.setScale(10, BigDecimal.ROUND_HALF_UP).toPlainString()
                 }
 
                 binding.resultTv.visibility = View.VISIBLE
-                binding.resultTv.text = "= $txtresult"
+                binding.resultTv.text = textResult
                 stmtError = false
                 lastNum = true
 
             } catch (ex: ArithmeticException) {
                 Log.e("MainActivity", "evaluate error", ex)
-                showError("Error")
+                showError("Error: Arithmetic Exception")
             } catch (ex: Exception) {
                 Log.e("MainActivity", "evaluate error", ex)
-                showError("Error")
+                showError("Error: Invalid Expression")
             }
         }
+        dynamicAdjustTextSize()
+    }
+
+    private fun preprocessExpression(expression: String): String {
+        return expression
+            .replace("×", "*")
+            .replace("÷", "/")
+            .replace("\uD835\uDF45","π")
+            .replace("√","sqrt")
+//            .replace(Regex("""(\d+)%""")) { matchResult ->
+//                val number = matchResult.groupValues[1].toDouble()
+//                (number / 100).toString()
+//            }
+    }
+
+    private fun showError(message: String) {
+        binding.resultTv.visibility = View.VISIBLE
+        binding.resultTv.text = message
+        stmtError = true
+        lastNum = false
     }
 
     private fun saveToHistory(inputText: String, txtResult: String) {
@@ -234,6 +277,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateHistoryView() {
         val historyText = historyList.joinToString(separator = "\n") { "${it.expression} = ${it.result}" }
+        if (historyText.isEmpty()) {
+            binding.historyTv.setText(R.string.no_history_message)
+            return
+        }
         binding.historyTv.text = historyText
     }
 
@@ -245,10 +292,73 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showError(message: String) {
-        binding.resultTv.visibility = View.VISIBLE
-        binding.resultTv.text = message
-        stmtError = true
+    private fun clear() {
+        binding.operationTv.text = ""
+        binding.resultTv.text = ""
+        binding.resultTv.visibility = View.GONE
         lastNum = false
+        lastDot = false
+        stmtError = false
     }
+
+    private fun clearHistory() {
+        historyList.clear()
+        updateHistoryView()
+        val message = "History cleared successfully."
+        Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+    }
+
+    fun collapse(view: View) {
+        val transition = Fade()
+        transition.duration = 500
+        transition.interpolator = AccelerateDecelerateInterpolator()
+        TransitionManager.beginDelayedTransition(binding.root, transition)
+
+        if (binding.spOP.visibility == View.VISIBLE) {
+            binding.spOP.visibility = View.GONE
+            binding.collapse.text = "∧"
+        } else {
+            binding.spOP.visibility = View.VISIBLE
+            binding.collapse.text = "∨"
+        }
+
+        if (binding.spOP.visibility == View.VISIBLE) {
+            binding.historyScrollView.visibility = View.GONE
+        }
+    }
+    private fun dynamicAdjustTextSize() {
+        val resultText = binding.resultTv.text.toString()
+        val inputText = binding.operationTv.text.toString()
+
+        val operationTextSize = when {
+            binding.resultTv.visibility == View.VISIBLE -> when {
+                inputText.length > 30 -> 15f
+                inputText.length > 25 -> 18f
+                inputText.length > 20 -> 20f
+                inputText.length > 15 -> 25f
+                inputText.length > 10 -> 30f
+                else -> 35f
+            }
+            else -> when {
+                inputText.length > 30 -> 25f
+                inputText.length > 25 -> 30f
+                inputText.length > 20 -> 35f
+                inputText.length > 15 -> 40f
+                inputText.length > 10 -> 45f
+                else -> 45f
+            }
+        }
+        binding.operationTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, operationTextSize)
+
+        val resultTextSize = when {
+            resultText.length > 30 -> 25f
+            resultText.length > 25 -> 30f
+            resultText.length > 20 -> 35f
+            resultText.length > 15 -> 40f
+            resultText.length > 10 -> 45f
+            else -> 50f
+        }
+        binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, resultTextSize)
+    }
+
 }

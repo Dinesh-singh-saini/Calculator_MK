@@ -28,6 +28,48 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
+            android:id="@+id/spOP"
+            android:visibility="gone"
+            android:animateLayoutChanges="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPov"
+                android:onClick="onClickOperator"
+                style="@style/spOp"
+                android:text="^" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonSqRoot"
+                style="@style/spOp"
+                android:text="√"
+                android:onClick="onClickOperator" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPi"
+                android:onClick="onClickNum"
+                style="@style/spOp"
+                android:text="𝝅" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonFact"
+                android:onClick="onClickFact"
+                style="@style/spOp"
+                android:text="!" />
+
+            <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonE"
+            android:onClick="onClickNum"
+            style="@style/spOp"
+            android:text="e" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -47,14 +89,16 @@
                 style="@style/combtn"
                 android:onClick="onClickBackspace"
                 android:textStyle="bold"
+                android:text="back"
                 app:icon="@drawable/baseline_backspace_24"
                 app:iconSize="45dp"
                 app:iconTint="@color/cmn" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonPercent"
+                android:id="@+id/buttonMod"
                 android:onClick="onClickOperator"
                 style="@style/combtn"
+                android:textStyle="bold"
                 android:text="%" />
 
             <com.google.android.material.button.MaterialButton
@@ -161,7 +205,8 @@
 
             <com.google.android.material.button.MaterialButton
                 style="@style/combtn"
-                android:textSize="32dp"
+                android:id="@+id/button00"
+                android:textSize="32sp"
                 android:textStyle="bold"
                 android:onClick="onClick00"
                 android:text="00" />
@@ -190,24 +235,41 @@
         android:layout_marginStart="18dp"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout2" />
 
+    <Button
+        android:id="@+id/collapse"
+        android:layout_width="55dp"
+        android:layout_height="52dp"
+        android:backgroundTint="#FDF6FE"
+        android:onClick="collapse"
+        android:text="∧"
+        android:textColor="@color/cmn"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.396" />
+
     <ScrollView
         android:id="@+id/historyScrollView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintBottom_toTopOf="@id/operationTv"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="@+id/toolbar">
 
         <TextView
             android:id="@+id/historyTv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="start"
             android:padding="16dp"
-            android:textSize="20sp"
             android:textColor="@color/cmn"
-            android:gravity="start" />
+            android:textSize="20sp" />
     </ScrollView>
 
     <TextView
@@ -220,13 +282,14 @@
         android:textSize="40sp"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout2" />
 
+
     <TextView
         android:id="@+id/operationTv"
         style="@style/calculate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text=""
-        android:textSize="36sp"
+        android:textSize="35sp"
         app:layout_constraintBottom_toTopOf="@+id/resultTv"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

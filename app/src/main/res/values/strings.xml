@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Calculator_MK</string>
     <string name="_0">0</string>
+    <string name="no_history_message">No history yet.</string>
+    <string name="loveMsg">I Love You Kittu beta ❤️🤗</string>
+
 </resources>
