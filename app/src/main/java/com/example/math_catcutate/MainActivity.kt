@@ -1,11 +1,15 @@
 package com.example.math_catcutate
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.Color.WHITE
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.transition.Fade
 import android.transition.TransitionManager
 import android.util.Log
@@ -49,6 +53,8 @@ class MainActivity : AppCompatActivity() {
             insets
         }
         window.statusBarColor = WHITE
+
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -83,6 +89,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    private fun Context.vibratePhone(duration: Long = 100) {
+        val vib = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        vib.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
+
+
     private fun openWebPage(url: String) {
         val webpage: Uri = Uri.parse(url)
         val intent = Intent(Intent.ACTION_VIEW, webpage)
@@ -107,6 +120,7 @@ class MainActivity : AppCompatActivity() {
     fun onClickClear(view: View) {
         binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40f)
         clear()
+        vibratePhone(60)
     }
 
     fun onClickBackspace(view: View) {
@@ -123,6 +137,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity", "last char error", e)
             }
         }
+        vibratePhone(55)
         dynamicAdjustTextSize()
     }
 
@@ -140,6 +155,7 @@ class MainActivity : AppCompatActivity() {
             lastNum = false
         }
         dynamicAdjustTextSize()
+        vibratePhone(50)
     }
 
     fun onClickNum(view: View) {
@@ -152,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         lastNum = true
         dynamicAdjustTextSize()
         onEquals()
+        vibratePhone(50)
     }
 
     fun onClick00(view: View) {
@@ -164,6 +181,7 @@ class MainActivity : AppCompatActivity() {
         lastNum = true
         dynamicAdjustTextSize()
         onEquals()
+        vibratePhone(50)
     }
     fun onClickFact(view: View) {
         val inputText = binding.operationTv.text.toString()
@@ -177,11 +195,12 @@ class MainActivity : AppCompatActivity() {
 
         if (number != null && number >= BigInteger.ZERO) {
             val result = fact(number)
-            binding.resultTv.text = result.toString()
+            binding.resultTv.text = String.format(result.toString())
         } else {
             showError("Enter a non-negative integer")
         }
         dynamicAdjustTextSize()
+        vibratePhone(50)
         stmtError = false
     }
 
@@ -200,6 +219,7 @@ class MainActivity : AppCompatActivity() {
         }
         binding.operationTv.text = binding.resultTv.text
         binding.resultTv.visibility = View.GONE
+        vibratePhone(60)
     }
 
 
