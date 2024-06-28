@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity() {
 
         if (number != null && number >= BigInteger.ZERO) {
             val result = fact(number)
-            binding.resultTv.text = result.toString()
+            binding.resultTv.text = String.format(result.toString())
         } else {
             showError("Enter a non-negative integer")
         }
