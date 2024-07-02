@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        vibratePhone(55)
         return when (item.itemId) {
             R.id.action_history -> {
                 toggleHistoryView()
@@ -333,6 +334,7 @@ class MainActivity : AppCompatActivity() {
         transition.duration = 500
         transition.interpolator = AccelerateDecelerateInterpolator()
         TransitionManager.beginDelayedTransition(binding.root, transition)
+        vibratePhone(55)
 
         if (binding.spOP.visibility == View.VISIBLE) {
             binding.spOP.visibility = View.GONE
