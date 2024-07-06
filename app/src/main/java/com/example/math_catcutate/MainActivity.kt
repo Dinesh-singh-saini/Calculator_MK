@@ -6,7 +6,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.Color.WHITE
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -44,6 +43,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        window.setFlags(
+            android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+
         val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
@@ -54,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         }
         window.statusBarColor = WHITE
 
-
+        loadHistoryFromPreferences()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -90,12 +93,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun Context.vibratePhone(duration: Long = 100) {
         val vib = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         vib.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
     }
-
 
     private fun openWebPage(url: String) {
         val webpage: Uri = Uri.parse(url)
@@ -184,6 +185,7 @@ class MainActivity : AppCompatActivity() {
         onEquals()
         vibratePhone(50)
     }
+
     fun onClickFact(view: View) {
         val inputText = binding.operationTv.text.toString()
         val number = inputText.toBigIntegerOrNull()
@@ -215,14 +217,14 @@ class MainActivity : AppCompatActivity() {
     fun onClickEquals(view: View) {
         val resultText = binding.resultTv.text.toString()
         dynamicAdjustTextSize()
-        if (resultText.length > 2 && !stmtError && binding.resultTv.text.toString() != R.string.loveMsg.toString()) {
+        if (!stmtError && binding.resultTv.text.toString() != "I Love You Kittu beta ❤\uFE0F\uD83E\uDD17") {
             saveToHistory(binding.operationTv.text.toString(), resultText)
         }
+
         binding.operationTv.text = binding.resultTv.text
         binding.resultTv.visibility = View.GONE
         vibratePhone(60)
     }
-
 
     private fun onEquals() {
         if (lastNum && !stmtError) {
@@ -294,6 +296,7 @@ class MainActivity : AppCompatActivity() {
         val entry = HistoryEntry(inputText, txtResult)
         historyList.add(0, entry)
         updateHistoryView()
+        saveHistoryToPreferences()
     }
 
     private fun updateHistoryView() {
@@ -325,6 +328,7 @@ class MainActivity : AppCompatActivity() {
     private fun clearHistory() {
         historyList.clear()
         updateHistoryView()
+        saveHistoryToPreferences()
         val message = "History cleared successfully."
         Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
     }
@@ -348,6 +352,7 @@ class MainActivity : AppCompatActivity() {
             binding.historyScrollView.visibility = View.GONE
         }
     }
+
     private fun dynamicAdjustTextSize() {
         val resultText = binding.resultTv.text.toString()
         val inputText = binding.operationTv.text.toString()
@@ -383,4 +388,24 @@ class MainActivity : AppCompatActivity() {
         binding.resultTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, resultTextSize)
     }
 
+    private fun saveHistoryToPreferences() {
+        val sharedPreferences = getSharedPreferences("MathCatculatePrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val historySet = historyList.map { "${it.expression}=${it.result}" }.toSet()
+        editor.putStringSet("historyList", historySet)
+        editor.apply()
+    }
+
+    private fun loadHistoryFromPreferences() {
+        val sharedPreferences = getSharedPreferences("MathCatculatePrefs", Context.MODE_PRIVATE)
+        val historySet = sharedPreferences.getStringSet("historyList", emptySet())
+        historyList.clear()
+        historySet?.forEach {
+            val parts = it.split("=")
+            if (parts.size == 2) {
+                historyList.add(HistoryEntry(parts[0], parts[1]))
+            }
+        }
+        updateHistoryView()
+    }
 }
