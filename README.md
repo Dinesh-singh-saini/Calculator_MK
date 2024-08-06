@@ -49,7 +49,7 @@ The menu layout includes:
 - The current operation is displayed in another `TextView` above the result.
 - Calculation history is shown in a `ScrollView` and can be toggled visible or hidden.
 
-##Install apk file [Click here]()
+##Install apk file [Click here](https://github.com/Dinesh-singh-saini/Calculator_MK/blob/main/Calculator%40dinesh.apk)
 
 ##Usage
 
